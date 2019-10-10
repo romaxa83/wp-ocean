@@ -1,0 +1,46 @@
+@font-face {
+  font-family: 'IconOther2';
+  src:  url('icomoon.eot?8jq1g4');
+  src:  url('icomoon.eot?8jq1g4#iefix') format('embedded-opentype'),
+    url('icomoon.ttf?8jq1g4') format('truetype'),
+    url('icomoon.woff?8jq1g4') format('woff'),
+    url('icomoon.svg?8jq1g4#IconOther2') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="iconother2"], [class*=" iconother2"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'IconOther2' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.iconother2address:before {
+  content: "\e991a";
+  color: #fdfefe;
+}
+.iconother2mail:before {
+  content: "\e992a";
+  color: #fff;
+}
+.iconother2map:before {
+  content: "\e993a";
+  color: #f9480f;
+}
+.iconother2number:before {
+  content: "\e994a";
+  color: #fff;
+}
+.iconother2rejim:before {
+  content: "\e995a";
+  color: #fff;
+}

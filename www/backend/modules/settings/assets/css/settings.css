@@ -1,0 +1,8 @@
+.table {} 
+.table>tbody>tr>td {
+    height: 51px;
+    vertical-align: middle;
+}
+.table>tbody>tr>th {
+    border: 1px solid #3c8dbc; 
+}

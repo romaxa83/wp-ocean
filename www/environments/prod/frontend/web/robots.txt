@@ -1,0 +1,38 @@
+User-agent: Googlebot
+Disallow: /admin
+Disallow: /register
+Disallow: /login
+Disallow: */category/
+Disallow: */tag/
+Disallow: *?limit=*
+Disallow: /vacancy/view?template=vacancy-view&post_id=1
+Disallow: /contact
+Disallow: *&date*
+Disallow: *?deptCity=*
+
+User-agent: *
+Disallow: /admin
+Disallow: /register
+Disallow: /login
+Disallow: */category/
+Disallow: */tag/
+Disallow: *?limit=*
+Disallow: /vacancy/view?template=vacancy-view&post_id=1
+Disallow: /contact
+Disallow: *&date*
+Disallow: *?deptCity=*
+
+User-agent: Yandex
+Disallow: /admin
+Disallow: /register
+Disallow: /login
+Disallow: */category/
+Disallow: */tag/
+Disallow: *?limit=*
+Disallow: /vacancy/view?template=vacancy-view&post_id=1
+Disallow: /contact
+Disallow: *&date*
+Disallow: *?deptCity=*
+Host: https://5okean.com/
+
+Sitemap: https://5okean.com/sitemap.xml

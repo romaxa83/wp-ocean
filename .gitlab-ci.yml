@@ -1,0 +1,320 @@
+stages:
+  - pre_deploy
+  - testing_php
+  - develop
+  - pre-production-conf
+  - pre-production-build
+  - testing
+  - production
+  - post_deploy
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  MYSQL_ROOT_PASSWORD: $TEST_DB_ROOTPASS_PROD
+  MYSQL_DATABASE: $TEST_DB_NAME_PROD
+  MYSQL_USER: $DB_USER_PROD
+  MYSQL_PASSWORD: $DB_PASS_PROD
+  MYSQL_ROOT_HOST: "%"
+  DOCKER_HOST: "tcp://docker:2375"
+
+cache:
+  untracked: true
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - www/vendor/
+
+tag-after-deployment:
+  only:
+    refs:
+      - master
+      - develop
+    variables:
+      - $CI_COMMIT_TITLE =~ /^(.*)+[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?$/
+  except:
+    refs:
+      - tags
+  stage: pre_deploy
+  image: debian:stable
+  before_script:
+    - apt-get clean -qq
+    - apt-get update -qq --fix-missing
+    - apt-get install -qq --fix-missing jq git
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -p 2222 t-me.pp.ua >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - export VERSION=$(cat ./www/composer.json | jq '.version' | sed "s/\"//g")
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git remote set-url origin "ssh://git@t-me.pp.ua:2222/wi1w/ocean.git"
+    - git remote -v
+  script:
+    - git tag -a "v${VERSION}" ${CI_COMMIT_SHA} -m "${VERSION}"
+    - git push origin --tags
+
+generate-release-note:
+  only:
+    refs:
+      - tags
+    variables:
+      - $CI_COMMIT_TITLE =~ /^(.*)+[0-9]+.[0-9]+.[0-9]+(-[a-zA-Z0-9]+)?$/
+  stage: post_deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  script:
+    - docker container run -e GITLAB_PERSONAL_TOKEN=${GITLAB_ACCESS_TOKEN} -e GITLAB_API_ENDPOINT=${CI_API_V4_URL} -e GITLAB_PROJECT_ID=${CI_PROJECT_ID} 00freezy00/gitlab-release-note-generator
+
+# Выкладка на dev
+deploy_to_dev:
+  stage: develop
+  tags: [yii]
+  image: edbizarro/gitlab-ci-pipeline-php:7.1-alpine
+  only:
+    - develop
+  environment:
+    name: dev
+  script:
+    - 'which ssh-agent || ( sudo apk add openssh-client )'
+    - sudo apk update && sudo apk add sshpass
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh  
+    - ssh-keyscan ${SERVER_IP_NEW} >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php
+    - php -r "unlink('composer-setup.php');"
+    - php composer.phar config -g github-oauth.github.com ${GITHUB_TOKEN} 
+    - php composer.phar install -d $(pwd)/www
+    - php composer.phar update -d $(pwd)/www
+    # Права
+    # - sudo chmod -R 0777 backend/web/uploads/ backend/web/img/uploads/
+    # Конфиги
+    - cp www/common/config/main-local.php.dist www/common/config/main-local.php
+    - sed -i -- "s~{NAME}~$DB_NAME_DEV~g" www/common/config/main-local.php
+    - sed -i -- "s~{USER}~$DB_USER_DEV_NEW~g" www/common/config/main-local.php
+    - sed -i -- "s~{PASSWORD}~$DB_PASS_DEV_NEW~g" www/common/config/main-local.php
+    - sed -i -- "s~#RewriteRule~RewriteRule~g" www/.htaccess
+    # Инит проекта
+    - sudo php www/init --env=Development --overwrite=No
+    # Выкладка
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "php ${DEV_PATH_NEW}yii cron/stop"
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "rm -rf /var/www/_old && rm -rf /var/www/_tmp && mkdir /var/www/_tmp"
+    - sshpass -p ${SSHPASS_NEW} rsync -zrpth --stats --delete-after --exclude=.git -compress-level=9 -e "ssh -p 22"  $(pwd)/www/ ${SERVER_USER}@${SERVER_IP_NEW}:/var/www/_tmp
+    # - ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "php /var/www/_tmp/init --env=Development --overwrite=No"
+    # - ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "composer install --prefer-dist --no-progress -d /var/www/_tmp"
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "mv ${DEV_PATH_NEW}console/runtime/cache /var/www/_tmp/console/runtime/ && mv ${DEV_PATH_NEW} /var/www/_old && mv /var/www/_tmp ${DEV_PATH_NEW}"
+    # - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "cp -r /var/www/_old/backend/web/uploads/. ${DEV_PATH_NEW}backend/web/uploads && cp -r /var/www/_old/backend/web/img/uploads/. ${DEV_PATH_NEW}backend/web/img/uploads"
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "chmod -R 0777 ${DEV_PATH_NEW}backend/runtime/"
+    # - ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "rm -rf /var/www/_old"
+    # Миграции
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "php ${DEV_PATH_NEW}yii migrate/up --interactive=0"
+    # Крон перезапуск
+    - sshpass -p ${SSHPASS_NEW} ssh -p22 ${SERVER_USER}@${SERVER_IP_NEW} "php ${DEV_PATH_NEW}yii cron/start"
+
+# Выкладка на pre-prod
+pre_prod_conf:
+  stage: pre-production-conf
+  tags: [yii]
+  image: edbizarro/gitlab-ci-pipeline-php:7.1-alpine
+  only:
+    - master
+  environment:
+    name: pre-production
+  script:
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php
+    - php -r "unlink('composer-setup.php');"
+    - php composer.phar config -g github-oauth.github.com ${GITHUB_TOKEN}
+    - ls -la
+    - php composer.phar install -d $(pwd)/www
+    - php composer.phar update -d $(pwd)/www
+    # Конфиги
+    - cp www/common/config/main-local.php.dist www/common/config/main-local.php
+    - sed -i -- "s~Options +SymLinksIfOwnerMatch~Options +FollowSymLinks~g" www/.htaccess
+    - sed -i -- "s~localhost~mariadb~g" www/common/config/main-local.php
+    - sed -i -- "s~localhost~redis~g" www/backend/config/main.php
+    - sed -i -- "s~{NAME}~$DB_NAME_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{USER}~$DB_USER_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{PASSWORD}~$DB_PASS_PROD~g" www/common/config/main-local.php
+    
+    # Инит проекта
+    - php www/init --env=Production --overwrite=No
+    # Fix reverse proxy
+    - sed -i -- "s~'proxy_enable' => TRUE~'proxy_enable' => FALSE~g" www/common/config/params.php
+  artifacts:
+    paths:
+      - www/yii_test
+      - www/.htaccess
+      - www/vendor/
+      - www/backend/config/
+      - www/backend/web/robots.txt
+      - www/backend/web/index.php
+      - www/common/config/
+      - www/console/config/
+      - www/frontend/config/
+      - www/frontend/web/robots.txt
+      - www/frontend/web/index.php
+    expire_in: 1 day
+    
+pre_prod_build:
+  stage: pre-production-build
+  image: docker:latest
+  services:
+    - docker:dind
+  only:
+    - master
+  environment:
+    name: pre-production
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG --tag $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE:latest
+    - 'which ssh-agent || ( apk add openssh-client )'
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_PRIVATE_KEY_PROD" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh  
+    - ssh-keyscan ${SERVER_IP_PREPROD} >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP_PREPROD} "set -a && source ${PRE_PROD_PATH}.env && ${PRE_PROD_PATH}deployment.sh"
+  dependencies:
+    - pre_prod_conf
+
+prod_testing:
+  stage: testing
+  image: docker:latest
+  services:
+    - name: docker:dind
+    - name: redis:latest
+      alias: redis
+    - name: mariadb:10.3
+      alias: mariadb
+      command: ["mysqld", "--character-set-server=utf8", "--collation-server=utf8_general_ci"]
+  only:
+    - master
+  environment:
+    name: test
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN hub.t-me.pp.ua
+    #- docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG || true
+    - mysqlip=$(getent hosts mariadb | awk '{ print $1 ; exit }')
+    - redisip=$(getent hosts redis | awk '{ print $1 ; exit }')
+    - echo $mysqlip
+    - docker ps
+    - docker run -d --name test-container $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker exec test-container /bin/bash -c "sed -i -- \"s~mariadb~$mysqlip~g\" ./common/config/main-local.php"
+    - docker exec test-container /bin/bash -c "sed -i -- \"s~redis~$redisip~g\" ./backend/config/main.php"
+    - docker exec test-container /bin/bash -c "sed -i -- \"s~dbname=ocean~dbname=test_ocean~g\" common/config/main-local.php"
+    - docker exec test-container /bin/bash -c "cat ./common/config/main-local.php && php init --env=Production --overwrite=No"
+#    - mysql -h$mysqlip -u$DB_USER_PROD -p$DB_PASS_PROD -e\"quit\"
+    - docker exec test-container /bin/bash -c "mysql -h$mysqlip -u$DB_USER_PROD -p$DB_PASS_PROD -e\"quit\""
+    - docker exec test-container /bin/bash -c "php yii_test migrate --interactive=0"
+    - docker exec test-container /bin/bash -c "php vendor/bin/codecept run unit -c backend"
+    - docker exec test-container /bin/bash -c "php vendor/bin/codecept run --coverage --coverage-xml --coverage-html"
+  when: manual
+
+# Выкладка на prod
+testing_in_php:
+  stage: testing_php
+  tags: [yii]
+  services:
+    - name: redis:latest
+      alias: redis
+    - name: mariadb:10.3
+      alias: mariadb
+      command: ["mysqld", "--character-set-server=utf8", "--collation-server=utf8_general_ci"]
+  image: edbizarro/gitlab-ci-pipeline-php:7.1-alpine
+  environment:
+    name: production
+  script:
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php
+    - php -r "unlink('composer-setup.php');"
+    - php composer.phar config -g github-oauth.github.com ${GITHUB_TOKEN}
+    - php composer.phar install -d $(pwd)/www
+    - php composer.phar update -d $(pwd)/www
+    # Конфиги
+    - cp www/common/config/main-local.php.dist www/common/config/main-local.php
+    - sed -i -- "s~localhost~mariadb~g" www/common/config/main-local.php
+    - sed -i -- "s~localhost~redis~g" www/backend/config/main.php
+    - sed -i -- "s~{NAME}~$TEST_DB_NAME_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{USER}~$DB_USER_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{PASSWORD}~$DB_PASS_PROD~g" www/common/config/main-local.php
+    # Инит проекта
+    - php www/init --env=Production --overwrite=No
+    # Fix reverse proxy
+    - sed -i -- "s~'proxy_enable' => TRUE~'proxy_enable' => FALSE~g" www/common/config/params.php
+    # Test
+    - cd www
+    - php yii_test migrate --interactive=0
+    - php vendor/bin/codecept run unit -c backend
+
+# Выкладка на prod
+deploy_to_prod:
+  stage: production
+  tags: [yii]
+  image: edbizarro/gitlab-ci-pipeline-php:7.1-alpine
+  only:
+    - master
+  environment:
+    name: production
+  script:
+    - 'which ssh-agent || ( sudo apk add openssh-client )'
+    - sudo apk update && sudo apk add sshpass
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_PRIVATE_KEY_PROD_MAIN" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh  
+    - ssh-keyscan ${SERVER_IP} >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php
+    - php -r "unlink('composer-setup.php');"
+    - php composer.phar config -g github-oauth.github.com ${GITHUB_TOKEN}
+    - php composer.phar install -d $(pwd)/www
+    - php composer.phar update -d $(pwd)/www
+    # Конфиги
+    - cp www/common/config/main-local.php.dist www/common/config/main-local.php
+    - sed -i -- "s~Options +SymLinksIfOwnerMatch~Options +FollowSymLinks~g" www/.htaccess
+    - sed -i -- "s~localhost~mariadb~g" www/common/config/main-local.php
+    - sed -i -- "s~localhost~redis~g" www/backend/config/main.php
+    - sed -i -- "s~{NAME}~$DB_NAME_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{USER}~$DB_USER_PROD~g" www/common/config/main-local.php
+    - sed -i -- "s~{PASSWORD}~$DB_PASS_PROD~g" www/common/config/main-local.php
+    # Минификация ассетов
+    # - php yii asset core/assets/core.php core/assets/core-prod.php
+    # Инит проекта
+    - php www/init --env=Production --overwrite=No
+    # Fix reverse proxy
+    - sed -i -- "s~'proxy_enable' => TRUE~'proxy_enable' => FALSE~g" www/common/config/params.php
+#    - sed -i -- "s~<?php~$_SERVER~g" frontend/web/index.php
+#    - sed -i -- "s~<?php~$_SERVER~g" backend/web/index.php
+    # Выкладка
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rm -rf /var/www/_old && rm -rf /var/www/_tmp && mkdir -p /var/www/_tmp && mkdir -p /var/www/_old"
+    - rsync -zrpth --stats --delete-after --exclude=.git --exclude=frontend/web/layout --compress-level=9 -e "ssh -p 22" $(pwd)/www/ ${SERVER_USER}@${SERVER_IP}:/var/www/_tmp
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rsync -ah --stats --delete-after ${PROD_PATH}console/runtime/cache /var/www/_tmp/console/runtime/"
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rsync -zrath --stats --delete-after -compress-level=9 ${PROD_PATH} /var/www/_old/"
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rsync -zrath --stats --delete-after -compress-level=9 /var/www/_tmp/ ${PROD_PATH}"
+    # Права
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "mkdir -p ${PROD_PATH}backend/web/uploads/ && chmod -R 0777 ${PROD_PATH}backend/web/uploads/"
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rsync -zrath --stats --delete-after -compress-level=9 /var/www/_old/backend/web/uploads/ ${PROD_PATH}backend/web/uploads/"
+    # Миграции
+    - rsync -zrpth --stats --delete-after -compress-level=9 -e "ssh -p 22" $(pwd)/init.sh ${SERVER_USER}@${SERVER_IP}:${PROD_PATH}init.sh
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "chmod +x ${PROD_PATH}init.sh"
+    #- ssh -p22 ${SERVER_USER}@${SERVER_IP} "cd /var/www/webserver/ && docker-compose --project-directory /var/www/webserver/ -f /var/www/webserver/docker-compose.yml restart"
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "docker exec webserver_php_1 /bin/bash -c /var/www/html/init.sh"
+    - ssh -p22 ${SERVER_USER}@${SERVER_IP} "rm ${PROD_PATH}init.sh "
+  when: manual
+  dependencies: []

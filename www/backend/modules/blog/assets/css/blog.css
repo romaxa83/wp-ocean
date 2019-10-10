@@ -1,0 +1,42 @@
+.gallery-hotel-review img {
+    max-width: 100%;
+}
+
+.gallery-hotel-review .text-right.mb-2 {
+    margin-bottom: 10px;
+    padding-right: 10px;
+    font-size: 18px;
+}
+
+.gallery-hotel-review .row.d-flex.flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.col-hotel-review {
+    margin-bottom: 15px;
+}
+
+.col-hotel-review img {
+    width: 100%;
+}
+
+.gallery {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+}
+#w2-btn{
+    margin-left: 10px;
+}
+
+#blog-posts td[data-attr="title"],
+#blog-posts td[data-attr="alias"],
+#blog-posts td[data-attr="published"] {
+    min-width: 170px;
+    max-width: 170px;
+    white-space: normal;
+}
+#blog-posts td[data-attr="alias"] {
+    word-break: break-all;
+}

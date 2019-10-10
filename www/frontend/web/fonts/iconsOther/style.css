@@ -1,0 +1,70 @@
+@font-face {
+  font-family: 'icomoon';
+  src:  url('fonts/icomoon.eot?c64v20');
+  src:  url('fonts/icomoon.eot?c64v20#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?c64v20') format('truetype'),
+    url('fonts/icomoon.woff?c64v20') format('woff'),
+    url('fonts/icomoon.svg?c64v20#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-candy:before {
+  content: "\e900";
+  color: #fff;
+}
+.icon-clip:before {
+  content: "\e901";
+  color: #ff4800;
+}
+.icon-eye:before {
+  content: "\e902";
+  color: #b8afd7;
+}
+.icon-flame:before {
+  content: "\e903";
+  color: #fff;
+}
+.icon-light-bulb:before {
+  content: "\e904";
+  color: #fff;
+}
+.icon-plitka_active:before {
+  content: "\e905";
+  color: #b8afd7;
+}
+.icon-profile:before {
+  content: "\e906";
+  color: #fff;
+}
+.icon-spisok_active:before {
+  content: "\e907";
+  color: #b8afd7;
+}
+.icon-work:before {
+  content: "\e908";
+  color: #fff;
+}
+.icon-question:before {
+  content: "\e909";
+  color: #fff;
+}
+.icon-call:before {
+  content: "\e90a";
+  color: #fff;
+}

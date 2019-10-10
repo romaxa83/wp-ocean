@@ -1,0 +1,133 @@
+version: "3"
+
+services:
+  proxy:
+    image: traefik:1.7
+    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG --accesslogsfile=/dev/stdout
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/etc/traefik/traefik.toml
+    networks:
+      - frontend
+    labels:
+      - "traefik.backend=proxy"
+      - "traefik.frontend.rule=Host:proxy.${DOMAIN}"
+      - "traefik.docker.network=frontend"
+      - "traefik.port=8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile-local
+    image: ocean
+    command: bash -c '. /etc/apache2/envvars; /usr/sbin/apache2 -DFOREGROUND'
+    volumes:
+      - ./local-init.sh:/init.sh
+      - ./www:/var/www/html
+    links:
+      - mariadb
+      - redis
+    depends_on:
+      - mariadb
+      - redis
+    networks:
+      - backend
+      - frontend
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    labels:
+      - "traefik.backend=ocean"
+      - "traefik.frontend.rule=Host:${DOMAIN},www.${DOMAIN}"
+      - "traefik.docker.network=frontend"
+      - "traefik.port=80"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  migration:
+    image: ocean
+    restart: on-failure
+    command: bash -c 'sh /init.sh && chmod +x /var/www/html/migrate.sh && sh /var/www/html/migrate.sh'
+    volumes:
+      - ./www:/var/www/html
+      - ./local-init.sh:/init.sh
+      - ./init.sh:/var/www/html/migrate.sh
+    links:
+      - mariadb
+    depends_on:
+      - mariadb
+      - php
+    networks:
+      - backend
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    labels:
+      - "traefik.enable=false"
+
+  mariadb:
+    image: mariadb:10.3
+    command: bash -c "chown -R mysql:mysql /var/log/mysql && exec /docker-entrypoint.sh mysqld --log-error=/var/log/mysql/err.log --general-log=1 --general-log-file=/var/log/mysql/general-log.log --character-set-server=utf8 --collation-server=utf8_general_ci"
+    volumes:
+      - ./mariadb:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql
+      - ./db/ocean.sql:/docker-entrypoint-initdb.d/dump.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=false"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=false"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: "phpmyadmin"
+    links:
+      - mariadb:db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - /sessions
+    labels:
+      - "traefik.backend=oceanphpmyadmin"
+      - "traefik.frontend.rule=Host:${DOMAIN}; PathPrefixStrip:/madmin/"
+      - "traefik.docker.network=frontend"
+      - "traefik.port=80"
+
+networks:
+  frontend:
+    external: true
+  backend:
+    external: false

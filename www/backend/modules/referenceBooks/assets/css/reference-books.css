@@ -1,0 +1,177 @@
+.box-custome-checkbox {
+    margin-right: 30px;
+}
+body .select2-container .select2-selection--single .select2-selection__rendered {
+    margin-top: 0;
+}
+.table.middle td {
+    vertical-align: middle !important;
+}
+.table .media {
+    text-align: center;
+}
+.table .media img {
+    height: 30px;
+}
+#hotel-form .add-service .type-service {
+    display: flex; align-items: center;
+}
+#hotel-form .add-service .field-service-price {
+    margin-bottom: 0;
+    margin-right: 30px;
+    margin-left: 30px;
+}
+.tgl-btn {
+    margin-bottom: 0;
+}
+
+.loader {
+    background-image: url("../img/loader.gif") ;
+    background-size: 50px 50px;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto;
+}
+
+#tour-table thead .filters select[name="TourSearch[currency]"] {
+    min-width: unset;
+    width: 55px;
+}
+
+#tour-table td[data-attr="hotel"] {
+    min-width: 250px;
+    max-width: 250px;
+    white-space: normal;
+    word-break: break-all;
+}
+
+#tour-table td[data-attr="main"] select,
+#tour-table td[data-attr="recommend"] select,
+#tour-table td[data-attr="hot"] select {
+    min-width: 120px
+}
+
+#tour-table td[data-attr="date_departure"] input,
+#tour-table td[data-attr="date_arrival"] input,
+#tour-table td[data-attr="date_begin"] input,
+#tour-table td[data-attr="date_end_sale"] input {
+    width: 80px;
+}
+
+#tour-table td[data-attr="date_departure"] .input-group.date .input-group-addon,
+#tour-table td[data-attr="date_arrival"] .input-group.date .input-group-addon,
+#tour-table td[data-attr="date_begin"] .input-group.date .input-group-addon,
+#tour-table td[data-attr="date_end_sale"] .input-group.date .input-group-addon {
+    display: none;
+}
+
+#country-form .form-group.field-city-cid {
+    display: none;
+}
+
+#tour-table td {
+    white-space: normal;
+}
+
+#tour-table-filters .form-control {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+#tour-table-filters td[data-attr="id"] input,
+#tour-table-filters td[data-attr="title"] input {
+    min-width: 34px;
+}
+
+#tour-table-filters td[data-attr="length"] input {
+    min-width: 20px;
+}
+
+#tour-table-filters td[data-attr="dept_city_id"] input {
+    min-width: 75px;
+}
+
+#tour-table-filters td[data-attr="date_begin"] .input-daterange {
+    width: 160px;
+}
+
+#tour-table-filters td[data-attr="date_begin"] .input-group-addon {
+    display: none;
+}
+
+#tour-table td[data-attr="price"] {
+    white-space: nowrap;
+}
+
+#tour-table td[data-attr="main"] select,
+#tour-table td[data-attr="recommend"] select,
+#tour-table td[data-attr="hot"] select {
+    min-width: unset;
+    width: 65px;
+}
+
+#tour-table {
+    margin-left: 31px;
+    margin-right: 37px;
+    margin-bottom: 74px;
+}
+
+#tour-table .summary {
+    position: absolute;
+    left: 10px;
+}
+
+#tour-table .table {
+    margin-top: 30px;
+    margin-bottom: 0;
+}
+
+#tour-table .pagination {
+    position: absolute;
+    bottom: 30px;
+}
+
+#tour-table th:first-child,
+#tour-table th:last-child {
+    margin-top: -1px;
+}
+
+#tour-table th:first-child,
+#tour-table td:first-child {
+    position: absolute;
+    width: 33px;
+    left: 10px;
+    top: auto;
+    border-top: 1px solid  #3c8dbc;
+    background-color: #fff;
+    z-index: 3;
+}
+
+#tour-table th:last-child,
+#tour-table td:last-child {
+    position: absolute;
+    width: 39px;
+    right: 10px;
+    top: auto;
+    border-top: 1px solid  #3c8dbc;
+    background-color: #fff;
+    z-index: 3;
+}
+
+html.is-ff #tour-table th:first-child,
+html.is-ff #tour-table td:first-child,
+html.is-ff #tour-table th:last-child,
+html.is-ff #tour-table td:last-child {
+    margin-top: -1px;
+}
+
+#tour-table:before {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 10px;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 3;
+}

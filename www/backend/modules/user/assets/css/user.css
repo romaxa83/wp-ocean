@@ -1,0 +1,47 @@
+.permission-check{
+   display: flex;
+   flex-direction: row;
+   justify-content: flex-start;
+}
+.permission-check label{
+   align-self: center;
+   padding-right: 20px;
+}
+.role-index .error{
+   display: none;
+   text-align: center;
+   color: indianred;
+}
+.role-index .success{
+   display: none;
+   text-align: center;
+   color: green;
+}
+.add-role-for-user{
+   float: right;
+   cursor: pointer;
+   padding-left: 10px;
+   color:dodgerblue;
+   font-size: 18px;
+}
+.block-permission{
+   max-height: 400px;
+   overflow: auto;
+   margin-bottom: 30px
+}
+.list-role{
+   display: flex;
+   flex-direction: row;
+   Justify-content:space-between;
+   align-items: center;
+}
+.remove-role{
+   cursor: pointer;
+}
+.btn-roles{
+   cursor:pointer;
+   color:rgb(2,105,194);
+   font-size: 16px;
+   float: right;
+   margin-left: 5px;
+}

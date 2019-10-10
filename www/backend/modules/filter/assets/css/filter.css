@@ -1,0 +1,25 @@
+thead tr {
+    white-space: nowrap;
+}
+.nav-tabs-custom {
+    border: 1px solid #d2d6de;
+}
+.custome-country {
+    height: 300px;
+    width: 400px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border: 1px solid #d2d6de;
+}
+table td.position {
+    text-align: center;
+}
+table tr td {
+    vertical-align: middle !important;
+}
+.select2-container .select2-selection--single .select2-selection__rendered {
+    margin-top: 0px !important;
+}
+.overflow {
+    overflow-y: scroll; height: 400px;
+}

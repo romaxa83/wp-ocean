@@ -1,0 +1,37 @@
+<?php
+return [
+    '0' => [
+        'id' => 2,
+        'media_id' => null,
+        'cid' => 8,
+        'code' => 'Austria',
+        'name' => 'Австрия',
+        'alias' => 'austria',
+        'country_description' => null,
+        'doc_description' => null,
+        'visa_description' => null,
+        'lat' => 47.7984000000000,
+        'lng' => 13.3594000000000,
+        'zoom' => 6,
+        'visa' => 0,
+        'status' => 1,
+        'sync' => 1,
+    ],
+    '1' => [
+        'id' => 3,
+        'media_id' => null,
+        'cid' => 27,
+        'code' => 'Great Britain',
+        'name' => 'Великобритания',
+        'alias' => 'great britain',
+        'country_description' => null,
+        'doc_description' => null,
+        'visa_description' => null,
+        'lat' => 54.5721000000000,
+        'lng' => -2.5928000000000,
+        'zoom' => 5,
+        'visa' => 0,
+        'status' => 1,
+        'sync' => 1,
+    ]
+];

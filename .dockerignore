@@ -1,0 +1,10 @@
+.gitattributes
+.gitignore
+.gitlab-ci.yml
+.git/
+Dockerfile
+mariadb/
+logs/
+db/
+local-init.sh
+Dockerfile-local

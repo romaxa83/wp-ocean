@@ -1,0 +1,56 @@
+body {
+    font-size: 14px;
+}
+.hotel-name {
+    font-weight: bold;
+    font-size: 24px;
+}
+.hotel-id {
+    width: 70px;
+    float: left;
+}
+.hotel-country-city {
+    float: left;
+}
+.full-price {
+    text-decoration: line-through;
+    color: #bcbcbc;
+    font-size: 16px;
+}
+.descount-price {
+    font-size: 24px;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #4b3772;
+}
+.hotel-all-tour {
+    color: #909090;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+ul li {
+    color: #ff4800;
+    float: left;
+    width: 115px;
+}
+ul li small{
+    color: #909090;
+    font-size: 12px;
+    font-weight: 400;
+}
+ul li span {
+    color: #000000;
+    font-size: 14px;
+}
+table tr td {
+    border: 1px solid red;
+}
+.title {
+    font-size: 18px;
+    font-weight: bold;
+}
+.mb-15 {
+    margin-: 15px;
+}

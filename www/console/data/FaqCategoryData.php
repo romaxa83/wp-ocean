@@ -1,0 +1,58 @@
+<?php
+
+return [
+    1 => [
+        'id' => 1,
+        'alias' => 'populjarnye',
+        'name' => 'Популярные',
+        'position' => 1,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+    2 => [
+        'id' => 2,
+        'alias' => 'oteli',
+        'name' => 'Отели',
+        'position' => 2,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+    3 => [
+        'id' => 3,
+        'alias' => 'avia',
+        'name' => 'Авиа',
+        'position' => 3,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+    4 => [
+        'id' => 4,
+        'alias' => 'strany',
+        'name' => 'Страны',
+        'position' => 4,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+    5 => [
+        'id' => 5,
+        'alias' => '5_okean',
+        'name' => '5 Океан',
+        'position' => 5,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+    6 => [
+        'id' => 6,
+        'alias' => 'raznoe',
+        'name' => 'Разное',
+        'position' => 6,
+        'status' => 1,
+        'created' => time(),
+        'updated' => time(),
+    ],
+];
